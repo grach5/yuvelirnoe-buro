@@ -76,6 +76,15 @@
   --dur-md: 0.4s;
 
   --wrap-width: 1180px;
+
+  /* --- 3D interaction tokens (catalog tilt / hero parallax / arcade emblem) --- */
+  --tilt-max-deg: 7deg;
+  --tilt-perspective: 1400px;
+  --tilt-transition: 250ms;
+  --parallax-speed: 0.22;
+  --arcade-emblem-w: 108px;
+  --arcade-emblem-h: 162px;
+  --arcade-spin-duration: 13s;
 }
 
 /* ==========================================================================
@@ -83,6 +92,7 @@
    ========================================================================== */
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
+html, body { overflow-x: hidden; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after {
@@ -162,13 +172,54 @@ svg { fill: currentColor; stroke: currentColor; }
 
 .hero-arcade {
   position: absolute;
-  inset: 0;
+  inset: -20% 0 -20%;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 200'%3E%3Cpath d='M4 198 V78 A56 56 0 0 1 116 78 V198' fill='none' stroke='%23D6B478' stroke-width='1.4'/%3E%3C/svg%3E");
   background-repeat: repeat-x;
   background-position: bottom center;
   background-size: 120px 200px;
   opacity: 0.14;
   pointer-events: none;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-arcade { transform: none !important; }
+}
+
+/* Arcade emblem — signature arch motif as a slow, continuous 3D object.
+   Uses the #arch-unit symbol (defined once in the SVG sprite, otherwise unused). */
+.arcade-emblem {
+  position: absolute;
+  top: 50%;
+  right: clamp(1rem, 5vw, 6.5rem);
+  transform: translateY(-50%);
+  width: var(--arcade-emblem-w);
+  height: var(--arcade-emblem-h);
+  perspective: 700px;
+  pointer-events: none;
+  z-index: 1;
+}
+.arcade-emblem-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  fill: none;
+  stroke: var(--color-brass-light);
+  stroke-width: 1.6;
+  transform-style: preserve-3d;
+  filter: drop-shadow(0 14px 26px rgba(6, 14, 12, 0.45));
+  animation: arcade-emblem-spin var(--arcade-spin-duration) linear infinite;
+}
+@keyframes arcade-emblem-spin {
+  0%   { transform: rotateY(0deg) rotateZ(0deg); }
+  50%  { transform: rotateY(180deg) rotateZ(5deg); }
+  100% { transform: rotateY(360deg) rotateZ(0deg); }
+}
+@media (max-width: 1024px) {
+  .arcade-emblem { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .arcade-emblem-svg { animation: none; transform: none; }
 }
 
 /* ==========================================================================
@@ -428,6 +479,7 @@ svg { fill: currentColor; stroke: currentColor; }
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-6);
+  perspective: var(--tilt-perspective);
 }
 .catalog-card {
   background: rgba(243, 244, 238, 0.04);
@@ -435,6 +487,35 @@ svg { fill: currentColor; stroke: currentColor; }
   border-radius: var(--radius-md);
   padding: var(--space-5);
   position: relative;
+  transform-style: preserve-3d;
+  transform: rotateX(var(--tilt-rx, 0deg)) rotateY(var(--tilt-ry, 0deg));
+  transition: transform var(--tilt-transition) var(--ease-out), border-color var(--dur-md) var(--ease-out), box-shadow var(--dur-md) var(--ease-out);
+  will-change: transform;
+}
+.catalog-card.is-tilting {
+  border-color: rgba(214, 180, 120, 0.55);
+  box-shadow: var(--shadow-lg);
+  transition: border-color var(--dur-md) var(--ease-out), box-shadow var(--dur-md) var(--ease-out);
+}
+.catalog-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(circle at var(--glare-x, 50%) var(--glare-y, 50%), rgba(245, 246, 241, 0.22), transparent 55%);
+  opacity: 0;
+  transition: opacity var(--dur-md) var(--ease-out);
+  pointer-events: none;
+}
+.catalog-card.is-tilting::after { opacity: 1; }
+.catalog-card .catalog-frame,
+.catalog-card h3,
+.catalog-card .catalog-price {
+  transform: translateZ(18px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .catalog-card { transform: none !important; }
+  .catalog-card::after { display: none; }
 }
 .catalog-card--wide { grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-6); align-items: center; }
 .catalog-card--wide .catalog-frame { margin-bottom: 0; }

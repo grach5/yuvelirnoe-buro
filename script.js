@@ -102,4 +102,72 @@
       window.open(url, '_blank', 'noopener');
     });
   }
+
+  /* --- Hero arcade parallax (scroll-driven, rAF-throttled, no fixed-attachment) --- */
+  var heroArcade = document.querySelector('.hero-arcade');
+  var heroSection = document.getElementById('hero');
+
+  if (heroArcade && heroSection && !reduceMotion) {
+    var parallaxSpeed = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--parallax-speed')
+    ) || 0.22;
+    var parallaxTicking = false;
+
+    function updateParallax() {
+      parallaxTicking = false;
+      var rect = heroSection.getBoundingClientRect();
+      /* Only bother transforming while the hero is anywhere near the viewport */
+      if (rect.bottom < 0 || rect.top > window.innerHeight) return;
+      var offset = window.scrollY * parallaxSpeed;
+      heroArcade.style.transform = 'translate3d(0, ' + offset + 'px, 0)';
+    }
+
+    function requestParallax() {
+      if (!parallaxTicking) {
+        parallaxTicking = true;
+        window.requestAnimationFrame(updateParallax);
+      }
+    }
+
+    window.addEventListener('scroll', requestParallax, { passive: true });
+    updateParallax();
+  }
+
+  /* --- Catalog cards: 3D tilt on pointer, with light glare --- */
+  var tiltCards = document.querySelectorAll('.catalog-card');
+  var supportsHoverTilt = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+  if (tiltCards.length && supportsHoverTilt && !reduceMotion) {
+    var tiltMax = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--tilt-max-deg')
+    ) || 7;
+
+    tiltCards.forEach(function (card) {
+      function onMove(e) {
+        var rect = card.getBoundingClientRect();
+        var px = (e.clientX - rect.left) / rect.width;
+        var py = (e.clientY - rect.top) / rect.height;
+
+        var rotY = (px - 0.5) * 2 * tiltMax;
+        var rotX = -(py - 0.5) * 2 * tiltMax;
+
+        card.style.setProperty('--tilt-rx', rotX.toFixed(2) + 'deg');
+        card.style.setProperty('--tilt-ry', rotY.toFixed(2) + 'deg');
+        card.style.setProperty('--glare-x', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--glare-y', (py * 100).toFixed(1) + '%');
+      }
+
+      card.addEventListener('mouseenter', function () {
+        card.classList.add('is-tilting');
+      });
+
+      card.addEventListener('mousemove', onMove);
+
+      card.addEventListener('mouseleave', function () {
+        card.classList.remove('is-tilting');
+        card.style.setProperty('--tilt-rx', '0deg');
+        card.style.setProperty('--tilt-ry', '0deg');
+      });
+    });
+  }
 })();
