@@ -39,7 +39,7 @@
 
   /* --- Reveal-on-scroll for section headers and cards --- */
   var revealTargets = document.querySelectorAll(
-    '.section-head, .catalog-card, .service-card, .gallery-tile, .payment-card, .fact-card, .trust-panel'
+    '.section-head, .about-photo, .catalog-card, .service-card, .gallery-tile, .payment-card, .fact-card, .trust-panel'
   );
 
   if (!reduceMotion && 'IntersectionObserver' in window) {
